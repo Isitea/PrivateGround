@@ -31,7 +31,7 @@ class PeerConnector {
         RTC.setRemoteDescription( description );
         RTC.createAnswer()
             .then( answer => {
-                RTC.setLocalDescription( offer );
+                RTC.setLocalDescription( answer );
                 console.log( answer );
             } )
     }
