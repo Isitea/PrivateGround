@@ -1,4 +1,5 @@
 "use strict";
+import { iEventTarget } from './customEvent.js';
 let _Default = {
     iceServers: [
         {
@@ -13,19 +14,39 @@ let _Default = {
     ]
 };
 
+class PeerConnector extends iEventTarget {
+    constructor () {
+        super();
+    }
+}
+
 class PeerCommunicator {
     constructor ( RTCConfig = {} ) {
         this.RTCConfig = Object.assign( _Default, RTCConfig );
-        this.peers = [];
+        this.connections = {};
     }
 
-    send () {}
+    send ( content, target = Object.keys( this.connections ) ) {
+        if ( content ) {
+            for ( const id of target ) {
+                this.connections[id].send( content );
+            }
+        }
+    }
+
+    listen () {
+        
+    }
 }
 
-class Peer {
-    constructor ( checkDuplication ) {
+class Connection {
+    constructor ( RTCConfig ) {
         this.id = '_' + Math.random().toString( 36 ).substr( 2 );
-        
+        this.peer = new RTCPeerConnection( RTCConfig );
+    }
+
+    send ( content ) {
+
     }
 }
 
