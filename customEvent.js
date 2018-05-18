@@ -1,69 +1,67 @@
 "use strict";
+import { secureRandom } from './uniqueId.js';
+
 class iEventTarget {
     constructor () {
         Object.defineProperties( this, {
             listeners: { value: {} },
-            once: { value: {} },
-            passive: { value: {} },
         } );
     }
 
-    addEventListener ( type, listener, { once = false, prior = false, passive = false } ) {
+    addEventListener ( type, listener, { once = false, prior = false, passive = false, expire = 0 } = {} ) {
         if ( !( type in this.listeners ) ) {
             this.listeners[ type ] = [];
-            this.once[ type ] = [];
-            this.passive[ type ] = [];
         }
-        if ( !this.listeners[ type ].includes( listener ) ) {
-            if ( prior ) this.listeners[ type ].unshift( listener );
-            else this.listeners[ type ].push( listener );
-            if ( once ) {
-                if ( prior ) this.once[ type ].unshift( listener );
-                else this.once[ type ].push( listener );
-            }
-            if ( passive ) {
-                if ( prior ) this.passive[ type ].unshift( listener );
-                else this.passive[ type ].push( listener );
-            }
-        }
+        if ( expire ) expire += Date.now();
 
-        return this;
+        let item;
+        if ( !( item = this.listeners[ type ].find( item => item.listener === listener ) ) ) {
+            item = { listener, once, passive, expire, id: '_' + secureRandom() };
+            if ( prior ) this.listeners[ type ].unshift( item );
+            else this.listeners[ type ].push( item );
+        }
+        return item.id;
     }
 
     removeEventListenerAll ( type ) {
         if ( type in this.listeners ) {
             this.listeners[ type ] = [];
-            this.once[ type ] = [];
-            this.passive[ type ] = [];
         }
 
         return this;
     }
 
-    removeEventListener ( type, listener ) {
+    removeEventListener ( type, item ) {
+        let { listener, id } = item;
+        if ( item instanceof Function ) [ listener, id ] = [ item, false ];
+
         if ( type in this.listeners ) {
-            let stack = this.listeners[ type ], stack_once = this.once[ type ], stack_passive = this.passive[ type ];
-            if ( stack.includes( listener ) ) {
-                stack.splice( stack.indexOf( listener ), 1 );
-                if ( stack_once.includes( listener ) ) stack_once.splice( stack_once.indexOf( listener ), 1 );
-                if ( stack_passive.includes( listener ) ) stack_passive.splice( stack_passive.indexOf( listener ), 1 );
-            }
+            let finder = item => ( ( listener && item.listener === listener ) || ( id && item.id === id ) );
+            let stack = this.listeners[ type ], index;
+            if ( ( index = stack.findIndex( finder ) ) > -1 ) stack.splice( index, 1 );
         }
 
         return this;
     }
 
     dispatchEvent ( event ) {
+        if ( !( event instanceof Event || event instanceof iEvent ) ) throw Error( "TypeError" );
         if ( event.type in this.listeners ) {
-            let stack = this.listeners[ event.type ], stack_once = this.once[ event.type ], stack_passive = this.passive[ event.type ];
-            for ( let listener of stack ) {
-                const preventDefault = event.defaultPrevented;
+            let stack = this.listeners[ event.type ];
+            const preventDefault = event.defaultPrevented;
+            for ( let item of stack ) {
+                if ( item.expire > 0 && item.expire < Date.now() ) {
+                    this.removeEventListener( event.type, item );
+                    continue;
+                }
+                
+                let listener = item.listener;
 
                 if ( typeof listener === "function" ) listener.call( this, event );
                 else if ( typeof listener.handleEvent === "function" ) listener.handleEvent.call( this, event );
 
-                if ( stack_passive.includes( listener ) ) event.defaultPrevented = preventDefault;
-                if ( stack_once.includes( listener ) ) this.removeEventListener( event.type, listener );
+                if ( item.passive ) event.defaultPrevented = preventDefault;
+                if ( item.once ) this.removeEventListener( event.type, item );
 
                 //Currently, .stopPropagation() and .stopImmediatePropagation() were treated as same action.
                 //Difference between them is a stage which effects.
@@ -82,12 +80,12 @@ let TIMESTAMP = Date.now();
 class iEvent {
     constructor ( type, { cancelable = true } ) {
         if ( !type ) throw new TypeError( "Insufficient parameter with constructor." );
-        this.type = type;
-        Object.assign( this, {
-            cancelable,
-            defaultPrevented: false,
-            cancelBubble: false,
-            timeStamp: Date.now() - TIMESTAMP
+        Object.defineProperties( this, {
+            type: { value: type, enumerable: true },
+            timeStamp: { value: Date.now() - TIMESTAMP },
+            cancelable: { value: cancelable },
+            cancelBubble: { value: false, writable: true },
+            defaultPrevented: { value: false, writable: true }
         } );
     }
 
@@ -102,4 +100,4 @@ class iEvent {
     }
 }
 
-export { iEventTarget, iEvent };
+export { iEventTarget, iEvent, secureRandom };
