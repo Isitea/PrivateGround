@@ -2,6 +2,7 @@
 import { LocalMessaging as Communicator } from './connector-local.js';
 import { iEventTarget } from './customEvent.js';
 
+// Public stun servers provied by Google Inc.
 let DefaultConfig = {
     iceServers: [
         {
@@ -21,8 +22,16 @@ class PeerCommunicator {
         //super();
         let RTCConfig = Object.assign( {}, DefaultConfig, InitConfig );
         Object.defineProperties( this, {
-            birth: { value: new Event( "" ).timeStamp },            
+            birth: { value: new Event( "" ).timeStamp },
         } );
+    }
+
+    subscribe ( channel ) {
+
+    }
+
+    unsubscribe ( channel ) {
+        
     }
 
     open () {
@@ -34,6 +43,10 @@ class PeerCommunicator {
     close () {
         delete this.connector;
     }
+}
+
+class PeerChannel {
+
 }
 
 class PeerConnector {

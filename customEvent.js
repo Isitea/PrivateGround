@@ -76,13 +76,12 @@ class iEventTarget {
     }
 }
 
-let TIMESTAMP = Date.now();
 class iEvent {
     constructor ( type, { cancelable = true } ) {
         if ( !type ) throw new TypeError( "Insufficient parameter with constructor." );
         Object.defineProperties( this, {
             type: { value: type, enumerable: true },
-            timeStamp: { value: Date.now() - TIMESTAMP },
+            timeStamp: { value: performance.now() },
             cancelable: { value: cancelable },
             cancelBubble: { value: false, writable: true },
             defaultPrevented: { value: false, writable: true }
