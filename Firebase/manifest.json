@@ -1,0 +1,21 @@
+{
+	"manifest_version": 2,
+	"name": "play ground",
+    "version": "1.0.0",
+	"author": "Isitea",
+	"content_scripts": [
+		{
+			"matches": [
+                "http://*/*",
+                "https://*/*"
+			],
+			"js": [
+				"service.js"
+			],
+			"run_at": "document_end",
+			"all_frames": false
+		}
+    ],
+    "web_accessible_resources": [ "*" ],
+	"minimum_chrome_version": "70"
+}
