@@ -1,0 +1,1 @@
+[ ...document.querySelectorAll( '.itemIcon .itemCheckbox' ) ].map( item => item.click() )
